@@ -16,14 +16,13 @@ struct DataTestTask {
 	double U;
 	double U_V;
 };
-double variant = 1;
+double variant = 7;
 double f_test_task(double x, double u) { 
 	double l = ((int)variant % 2 ? -1 : 1) * (variant / 2.0);
 	return l * u;
 }
-static double f_test_pervoobr(double x, double u) {
-	double lambda = ((static_cast<int>(variant) % 2 == 0) ? 1.0 : -1.0) * (variant / 2.0);
-	return u * exp(lambda * x);
+static double f_test_pervoobr(double x) {
+	return exp(-7.0 / 2.0 * x);
 }
 double RK4_step_test_task(double V, double x, double h) {
 	double k1 = f_test_task(x, V);
@@ -40,6 +39,22 @@ std::vector<DataTestTask> RK4_method_fixed_step_test_task(double x0, double U0, 
 	double V_n = U0;
 	int iters = 0;
 
+	DataTestTask CurrStepData;
+
+	CurrStepData.x = x_n;
+	CurrStepData.V_full = V_n;
+	CurrStepData.V_half2 = V_n;
+	CurrStepData.Vfull_Vhalf2 = V_n - V_n;
+	CurrStepData.OLP = 16 * (V_n - V_n) / 15.0;
+	CurrStepData.h = h;
+	CurrStepData.C1 = 0;
+	CurrStepData.C2 = 0;
+	CurrStepData.U = f_test_pervoobr(x_n);
+	CurrStepData.U_V = fabs(f_test_pervoobr(x_n) - V_n);
+
+	Data.push_back(CurrStepData);
+
+
 	while ((h > 0 && x_n < b) || (h < 0 && x_n > b)){
 		DataTestTask CurrStepData;
 		iters++;
@@ -53,25 +68,32 @@ std::vector<DataTestTask> RK4_method_fixed_step_test_task(double x0, double U0, 
 			h = b - x_n;
 		}
 
-		V_n = RK4_step_test_task(V_n, x_n, h);
-		x_n += h;
+		double V_full = RK4_step_test_task(V_n, x_n, h);
+		
 
 		// Подсчет двойного шага для таблицы
 		double V_half = RK4_step_test_task(V_n, x_n, h / 2.0);
 		double V_half2 = RK4_step_test_task(V_half, x_n + h / 2.0, h / 2.0);
 
+		V_n = V_full;
+		x_n += h;
+
 		CurrStepData.x = x_n;
 		CurrStepData.V_full = V_n;
 		CurrStepData.V_half2 = V_half2;
 		CurrStepData.Vfull_Vhalf2 = V_n - V_half2;
-		CurrStepData.OLP = (V_n - V_half2) / 15.0;
+		CurrStepData.OLP = 16 * (V_n - V_half2) / 15.0;
 		CurrStepData.h = h;
 		CurrStepData.C1 = 0;
 		CurrStepData.C2 = 0;
-		CurrStepData.U = f_test_pervoobr(x_n, V_n);
-		CurrStepData.U = f_test_pervoobr(x_n, V_n) - V_n;
+		CurrStepData.U = f_test_pervoobr(x_n);
+		CurrStepData.U_V = fabs(f_test_pervoobr(x_n) - V_n);
 
 		Data.push_back(CurrStepData);
+
+		if (fabs(x_n - b) < 1e-12) {
+			break;
+		}
 	}
 
 	return Data;
@@ -87,6 +109,21 @@ std::vector<DataTestTask> RK4_method_addaptive_step_test_task(double x0, double 
 
 	double C1 = 0;
 	double C2 = 0;
+
+	DataTestTask CurrStepData;
+
+	CurrStepData.x = x_n;
+	CurrStepData.V_full = V_n;
+	CurrStepData.V_half2 = V_n;
+	CurrStepData.Vfull_Vhalf2 = V_n - V_n;
+	CurrStepData.OLP = 16 * (V_n - V_n) / 15.0;
+	CurrStepData.h = h_n;
+	CurrStepData.C1 = C1;
+	CurrStepData.C2 = C2;
+	CurrStepData.U = f_test_pervoobr(x_n);
+	CurrStepData.U_V = fabs(f_test_pervoobr(x_n) - V_n);
+
+	Data.push_back(CurrStepData);
 
 	while ((h_n > 0 && x_n < b) || (h_n < 0 && x_n > b)) {
 		DataTestTask CurrStepData;
@@ -132,14 +169,18 @@ std::vector<DataTestTask> RK4_method_addaptive_step_test_task(double x0, double 
 		CurrStepData.V_full = V_full;
 		CurrStepData.V_half2 = V_half2;
 		CurrStepData.Vfull_Vhalf2 = V_full - V_half2;
-		CurrStepData.OLP = (V_full - V_half2) / 15.0;
+		CurrStepData.OLP = 16.0 * (V_full - V_half2) / 15.0;
 		CurrStepData.h = h_n;
-		CurrStepData.C1 = 0;
-		CurrStepData.C2 = 0;
-		CurrStepData.U = f_test_pervoobr(x_n, V_n);
-		CurrStepData.U = f_test_pervoobr(x_n, V_n) - V_n;
+		CurrStepData.C1 = C1;
+		CurrStepData.C2 = C2;
+		CurrStepData.U = f_test_pervoobr(x_n);
+		CurrStepData.U_V = fabs(f_test_pervoobr(x_n) - V_n);
 
 		Data.push_back(CurrStepData);
+
+		if (fabs(x_n - b) < 1e-12) {
+			break;
+		}
 	}
 
 	return Data;
@@ -354,9 +395,9 @@ namespace Graph {
 	private: ZedGraph::ZedGraphControl^  zedGraphControl1;
 	private: System::Windows::Forms::Button^  button1;
 	private: System::Windows::Forms::DataGridView^  dataGridView1;
-	private: System::Windows::Forms::DataGridViewTextBoxColumn^  X;
-	private: System::Windows::Forms::DataGridViewTextBoxColumn^  F_1;
-	private: System::Windows::Forms::DataGridViewTextBoxColumn^  F_2;
+
+
+
 	private: System::Windows::Forms::Label^  label1;
 	private: System::Windows::Forms::TextBox^  textBox1;
 	private: System::Windows::Forms::Label^  label2;
@@ -368,6 +409,55 @@ namespace Graph {
 	private: System::Windows::Forms::Label^  label4;
 	private: System::Windows::Forms::TextBox^  textBox5;
 	private: System::Windows::Forms::Label^  label5;
+
+
+
+
+
+
+
+
+
+
+	private: System::Windows::Forms::TextBox^ textBox6;
+	private: System::Windows::Forms::Label^ label6;
+	private: System::Windows::Forms::TabControl^ tabControl1;
+	private: System::Windows::Forms::TabPage^ TestTask;
+	private: System::Windows::Forms::TabPage^ MainTask;
+	private: System::Windows::Forms::CheckBox^ checkBox1;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ Iter;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ X;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ V_full;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ V_half2;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ V_full_V_half2;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ OLP;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ h;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ C1;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ C2;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ U;
+	private: System::Windows::Forms::DataGridViewTextBoxColumn^ U_V;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -392,9 +482,6 @@ namespace Graph {
 			this->zedGraphControl1 = (gcnew ZedGraph::ZedGraphControl());
 			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->dataGridView1 = (gcnew System::Windows::Forms::DataGridView());
-			this->X = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
-			this->F_1 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
-			this->F_2 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->label2 = (gcnew System::Windows::Forms::Label());
@@ -406,12 +493,31 @@ namespace Graph {
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->textBox5 = (gcnew System::Windows::Forms::TextBox());
 			this->label5 = (gcnew System::Windows::Forms::Label());
+			this->textBox6 = (gcnew System::Windows::Forms::TextBox());
+			this->label6 = (gcnew System::Windows::Forms::Label());
+			this->tabControl1 = (gcnew System::Windows::Forms::TabControl());
+			this->TestTask = (gcnew System::Windows::Forms::TabPage());
+			this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
+			this->MainTask = (gcnew System::Windows::Forms::TabPage());
+			this->Iter = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->X = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->V_full = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->V_half2 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->V_full_V_half2 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->OLP = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->h = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->C1 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->C2 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->U = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
+			this->U_V = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->BeginInit();
+			this->tabControl1->SuspendLayout();
+			this->TestTask->SuspendLayout();
 			this->SuspendLayout();
 			// 
 			// zedGraphControl1
 			// 
-			this->zedGraphControl1->Location = System::Drawing::Point(38, 30);
+			this->zedGraphControl1->Location = System::Drawing::Point(0, 0);
 			this->zedGraphControl1->Name = L"zedGraphControl1";
 			this->zedGraphControl1->ScrollGrace = 0;
 			this->zedGraphControl1->ScrollMaxX = 0;
@@ -420,15 +526,15 @@ namespace Graph {
 			this->zedGraphControl1->ScrollMinX = 0;
 			this->zedGraphControl1->ScrollMinY = 0;
 			this->zedGraphControl1->ScrollMinY2 = 0;
-			this->zedGraphControl1->Size = System::Drawing::Size(501, 327);
+			this->zedGraphControl1->Size = System::Drawing::Size(613, 375);
 			this->zedGraphControl1->TabIndex = 0;
 			this->zedGraphControl1->Load += gcnew System::EventHandler(this, &MyForm::zedGraphControl1_Load);
 			// 
 			// button1
 			// 
-			this->button1->Location = System::Drawing::Point(633, 386);
+			this->button1->Location = System::Drawing::Point(538, 393);
 			this->button1->Name = L"button1";
-			this->button1->Size = System::Drawing::Size(142, 29);
+			this->button1->Size = System::Drawing::Size(70, 29);
 			this->button1->TabIndex = 1;
 			this->button1->Text = L"Draw";
 			this->button1->UseVisualStyleBackColor = true;
@@ -437,56 +543,40 @@ namespace Graph {
 			// dataGridView1
 			// 
 			this->dataGridView1->ColumnHeadersHeightSizeMode = System::Windows::Forms::DataGridViewColumnHeadersHeightSizeMode::AutoSize;
-			this->dataGridView1->Columns->AddRange(gcnew cli::array< System::Windows::Forms::DataGridViewColumn^  >(3) {
-				this->X, this->F_1,
-					this->F_2
+			this->dataGridView1->Columns->AddRange(gcnew cli::array< System::Windows::Forms::DataGridViewColumn^  >(11) {
+				this->Iter, this->X,
+					this->V_full, this->V_half2, this->V_full_V_half2, this->OLP, this->h, this->C1, this->C2, this->U, this->U_V
 			});
-			this->dataGridView1->Location = System::Drawing::Point(559, 30);
+			this->dataGridView1->Location = System::Drawing::Point(614, 0);
 			this->dataGridView1->Name = L"dataGridView1";
 			this->dataGridView1->RowHeadersVisible = false;
-			this->dataGridView1->Size = System::Drawing::Size(274, 327);
+			this->dataGridView1->Size = System::Drawing::Size(957, 375);
 			this->dataGridView1->TabIndex = 2;
-			// 
-			// X
-			// 
-			this->X->HeaderText = L"X";
-			this->X->Name = L"X";
-			this->X->ReadOnly = true;
-			this->X->Width = 50;
-			// 
-			// F_1
-			// 
-			this->F_1->HeaderText = L"F_1";
-			this->F_1->Name = L"F_1";
-			this->F_1->ReadOnly = true;
-			// 
-			// F_2
-			// 
-			this->F_2->HeaderText = L"F_2";
-			this->F_2->Name = L"F_2";
-			this->F_2->ReadOnly = true;
+			this->dataGridView1->CellContentClick += gcnew System::Windows::Forms::DataGridViewCellEventHandler(this, &MyForm::dataGridView1_CellContentClick);
 			// 
 			// label1
 			// 
 			this->label1->AutoSize = true;
-			this->label1->Location = System::Drawing::Point(59, 394);
+			this->label1->Location = System::Drawing::Point(6, 396);
 			this->label1->Name = L"label1";
 			this->label1->Size = System::Drawing::Size(13, 13);
 			this->label1->TabIndex = 3;
 			this->label1->Text = L"a";
+			this->label1->Click += gcnew System::EventHandler(this, &MyForm::label1_Click);
 			// 
 			// textBox1
 			// 
-			this->textBox1->Location = System::Drawing::Point(78, 394);
+			this->textBox1->Location = System::Drawing::Point(25, 393);
 			this->textBox1->Name = L"textBox1";
 			this->textBox1->Size = System::Drawing::Size(48, 20);
 			this->textBox1->TabIndex = 4;
 			this->textBox1->Text = L"0";
+			this->textBox1->TextChanged += gcnew System::EventHandler(this, &MyForm::textBox1_TextChanged);
 			// 
 			// label2
 			// 
 			this->label2->AutoSize = true;
-			this->label2->Location = System::Drawing::Point(171, 396);
+			this->label2->Location = System::Drawing::Point(91, 396);
 			this->label2->Name = L"label2";
 			this->label2->Size = System::Drawing::Size(13, 13);
 			this->label2->TabIndex = 5;
@@ -494,7 +584,7 @@ namespace Graph {
 			// 
 			// textBox2
 			// 
-			this->textBox2->Location = System::Drawing::Point(190, 393);
+			this->textBox2->Location = System::Drawing::Point(110, 393);
 			this->textBox2->Name = L"textBox2";
 			this->textBox2->Size = System::Drawing::Size(49, 20);
 			this->textBox2->TabIndex = 6;
@@ -503,7 +593,7 @@ namespace Graph {
 			// label3
 			// 
 			this->label3->AutoSize = true;
-			this->label3->Location = System::Drawing::Point(287, 398);
+			this->label3->Location = System::Drawing::Point(256, 396);
 			this->label3->Name = L"label3";
 			this->label3->Size = System::Drawing::Size(13, 13);
 			this->label3->TabIndex = 7;
@@ -511,7 +601,7 @@ namespace Graph {
 			// 
 			// textBox3
 			// 
-			this->textBox3->Location = System::Drawing::Point(306, 394);
+			this->textBox3->Location = System::Drawing::Point(275, 393);
 			this->textBox3->Name = L"textBox3";
 			this->textBox3->Size = System::Drawing::Size(61, 20);
 			this->textBox3->TabIndex = 8;
@@ -519,9 +609,9 @@ namespace Graph {
 			// 
 			// button2
 			// 
-			this->button2->Location = System::Drawing::Point(633, 437);
+			this->button2->Location = System::Drawing::Point(614, 393);
 			this->button2->Name = L"button2";
-			this->button2->Size = System::Drawing::Size(142, 29);
+			this->button2->Size = System::Drawing::Size(80, 29);
 			this->button2->TabIndex = 9;
 			this->button2->Text = L"Zoom";
 			this->button2->UseVisualStyleBackColor = true;
@@ -529,63 +619,194 @@ namespace Graph {
 			// 
 			// textBox4
 			// 
-			this->textBox4->Location = System::Drawing::Point(190, 437);
+			this->textBox4->Location = System::Drawing::Point(376, 394);
 			this->textBox4->Name = L"textBox4";
 			this->textBox4->Size = System::Drawing::Size(49, 20);
 			this->textBox4->TabIndex = 13;
-			this->textBox4->Text = L"1";
+			this->textBox4->Text = L"0,001";
 			// 
 			// label4
 			// 
 			this->label4->AutoSize = true;
-			this->label4->Location = System::Drawing::Point(171, 440);
+			this->label4->Location = System::Drawing::Point(346, 397);
 			this->label4->Name = L"label4";
-			this->label4->Size = System::Drawing::Size(13, 13);
+			this->label4->Size = System::Drawing::Size(25, 13);
 			this->label4->TabIndex = 12;
-			this->label4->Text = L"b";
+			this->label4->Text = L"Eps";
+			this->label4->Click += gcnew System::EventHandler(this, &MyForm::label4_Click);
 			// 
 			// textBox5
 			// 
-			this->textBox5->Location = System::Drawing::Point(78, 436);
+			this->textBox5->Location = System::Drawing::Point(195, 393);
 			this->textBox5->Name = L"textBox5";
 			this->textBox5->Size = System::Drawing::Size(48, 20);
 			this->textBox5->TabIndex = 11;
-			this->textBox5->Text = L"0";
+			this->textBox5->Text = L"1,0";
 			// 
 			// label5
 			// 
 			this->label5->AutoSize = true;
-			this->label5->Location = System::Drawing::Point(59, 438);
+			this->label5->Location = System::Drawing::Point(168, 397);
 			this->label5->Name = L"label5";
-			this->label5->Size = System::Drawing::Size(13, 13);
+			this->label5->Size = System::Drawing::Size(21, 13);
 			this->label5->TabIndex = 10;
-			this->label5->Text = L"a";
+			this->label5->Text = L"U0";
+			this->label5->Click += gcnew System::EventHandler(this, &MyForm::label5_Click);
+			// 
+			// textBox6
+			// 
+			this->textBox6->Location = System::Drawing::Point(462, 394);
+			this->textBox6->Name = L"textBox6";
+			this->textBox6->Size = System::Drawing::Size(49, 20);
+			this->textBox6->TabIndex = 14;
+			this->textBox6->Text = L"20";
+			// 
+			// label6
+			// 
+			this->label6->AutoSize = true;
+			this->label6->Location = System::Drawing::Point(431, 398);
+			this->label6->Name = L"label6";
+			this->label6->Size = System::Drawing::Size(34, 13);
+			this->label6->TabIndex = 15;
+			this->label6->Text = L"Nmax";
+			this->label6->Click += gcnew System::EventHandler(this, &MyForm::label6_Click);
+			// 
+			// tabControl1
+			// 
+			this->tabControl1->Controls->Add(this->TestTask);
+			this->tabControl1->Controls->Add(this->MainTask);
+			this->tabControl1->Location = System::Drawing::Point(0, 0);
+			this->tabControl1->Name = L"tabControl1";
+			this->tabControl1->SelectedIndex = 0;
+			this->tabControl1->Size = System::Drawing::Size(1594, 679);
+			this->tabControl1->TabIndex = 16;
+			// 
+			// TestTask
+			// 
+			this->TestTask->Controls->Add(this->checkBox1);
+			this->TestTask->Controls->Add(this->zedGraphControl1);
+			this->TestTask->Controls->Add(this->dataGridView1);
+			this->TestTask->Controls->Add(this->button2);
+			this->TestTask->Controls->Add(this->label6);
+			this->TestTask->Controls->Add(this->textBox1);
+			this->TestTask->Controls->Add(this->button1);
+			this->TestTask->Controls->Add(this->textBox6);
+			this->TestTask->Controls->Add(this->label1);
+			this->TestTask->Controls->Add(this->textBox4);
+			this->TestTask->Controls->Add(this->label2);
+			this->TestTask->Controls->Add(this->label4);
+			this->TestTask->Controls->Add(this->textBox2);
+			this->TestTask->Controls->Add(this->textBox5);
+			this->TestTask->Controls->Add(this->label3);
+			this->TestTask->Controls->Add(this->label5);
+			this->TestTask->Controls->Add(this->textBox3);
+			this->TestTask->Location = System::Drawing::Point(4, 22);
+			this->TestTask->Name = L"TestTask";
+			this->TestTask->Padding = System::Windows::Forms::Padding(3);
+			this->TestTask->Size = System::Drawing::Size(1586, 653);
+			this->TestTask->TabIndex = 0;
+			this->TestTask->Text = L"Test Task";
+			this->TestTask->UseVisualStyleBackColor = true;
+			this->TestTask->Click += gcnew System::EventHandler(this, &MyForm::TestTask_Click);
+			// 
+			// checkBox1
+			// 
+			this->checkBox1->AutoSize = true;
+			this->checkBox1->Location = System::Drawing::Point(256, 419);
+			this->checkBox1->Name = L"checkBox1";
+			this->checkBox1->Size = System::Drawing::Size(76, 17);
+			this->checkBox1->TabIndex = 16;
+			this->checkBox1->Text = L"Fixed Step";
+			this->checkBox1->UseVisualStyleBackColor = true;
+			this->checkBox1->CheckedChanged += gcnew System::EventHandler(this, &MyForm::checkBox1_CheckedChanged);
+			// 
+			// MainTask
+			// 
+			this->MainTask->Location = System::Drawing::Point(4, 22);
+			this->MainTask->Name = L"MainTask";
+			this->MainTask->Padding = System::Windows::Forms::Padding(3);
+			this->MainTask->Size = System::Drawing::Size(1523, 653);
+			this->MainTask->TabIndex = 1;
+			this->MainTask->Text = L"Main Task";
+			this->MainTask->UseVisualStyleBackColor = true;
+			// 
+			// Iter
+			// 
+			this->Iter->HeaderText = L"Iter";
+			this->Iter->Name = L"Iter";
+			this->Iter->Width = 40;
+			// 
+			// X
+			// 
+			this->X->HeaderText = L"X";
+			this->X->Name = L"X";
+			this->X->ReadOnly = true;
+			this->X->Width = 70;
+			// 
+			// V_full
+			// 
+			this->V_full->HeaderText = L"V_full";
+			this->V_full->Name = L"V_full";
+			this->V_full->ReadOnly = true;
+			// 
+			// V_half2
+			// 
+			this->V_half2->HeaderText = L"V_half2";
+			this->V_half2->Name = L"V_half2";
+			this->V_half2->ReadOnly = true;
+			// 
+			// V_full_V_half2
+			// 
+			this->V_full_V_half2->HeaderText = L"V_full - V_half2";
+			this->V_full_V_half2->Name = L"V_full_V_half2";
+			// 
+			// OLP
+			// 
+			this->OLP->HeaderText = L"ОЛП";
+			this->OLP->Name = L"OLP";
+			// 
+			// h
+			// 
+			this->h->HeaderText = L"h";
+			this->h->Name = L"h";
+			this->h->Width = 70;
+			// 
+			// C1
+			// 
+			this->C1->HeaderText = L"C1";
+			this->C1->Name = L"C1";
+			this->C1->Width = 40;
+			// 
+			// C2
+			// 
+			this->C2->HeaderText = L"C2";
+			this->C2->Name = L"C2";
+			this->C2->Width = 40;
+			// 
+			// U
+			// 
+			this->U->HeaderText = L"U";
+			this->U->Name = L"U";
+			// 
+			// U_V
+			// 
+			this->U_V->HeaderText = L"|U - V|";
+			this->U_V->Name = L"U_V";
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(858, 497);
-			this->Controls->Add(this->textBox4);
-			this->Controls->Add(this->label4);
-			this->Controls->Add(this->textBox5);
-			this->Controls->Add(this->label5);
-			this->Controls->Add(this->button2);
-			this->Controls->Add(this->textBox3);
-			this->Controls->Add(this->label3);
-			this->Controls->Add(this->textBox2);
-			this->Controls->Add(this->label2);
-			this->Controls->Add(this->textBox1);
-			this->Controls->Add(this->label1);
-			this->Controls->Add(this->dataGridView1);
-			this->Controls->Add(this->button1);
-			this->Controls->Add(this->zedGraphControl1);
+			this->ClientSize = System::Drawing::Size(1606, 680);
+			this->Controls->Add(this->tabControl1);
 			this->Name = L"MyForm";
 			this->Text = L"MyForm";
 			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->EndInit();
+			this->tabControl1->ResumeLayout(false);
+			this->TestTask->ResumeLayout(false);
+			this->TestTask->PerformLayout();
 			this->ResumeLayout(false);
-			this->PerformLayout();
 
 		}
 #pragma endregion
@@ -598,43 +819,92 @@ namespace Graph {
 			return sin(2 * x);
 		}
 
+	// Test task 
 	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
+		/* --- Нажали Draw (button 1) --- */
 
 		GraphPane^ panel = zedGraphControl1->GraphPane;
 		panel->CurveList->Clear();
-		PointPairList^ f1_list = gcnew ZedGraph::PointPairList();
-		PointPairList^ f2_list = gcnew ZedGraph::PointPairList();
+		PointPairList^ numeric_trajectory_list = gcnew ZedGraph::PointPairList();
+		PointPairList^ real_trajectory_list = gcnew ZedGraph::PointPairList();
 
-		// Интервал, где есть данные
+		// Считываем данные, просчитываем то, что нужно double x0, double U0, double h, double b, int Nmax
+
 		double xmin = Convert::ToDouble(textBox1->Text);
 		double xmax = Convert::ToDouble(textBox2->Text);
-
+		double U0 = Convert::ToDouble(textBox5->Text);
 		double h = Convert::ToDouble(textBox3->Text);
+		double Eps = Convert::ToDouble(textBox4->Text);
+		double Nmax = Convert::ToDouble(textBox6->Text);
+
+		std::vector<DataTestTask> TestData;
+
+		bool isFixedStep = checkBox1->Checked;
+
+		// Просчитываем численную траекторию методом RK4
+		if (isFixedStep) {
+			TestData = RK4_method_fixed_step_test_task(xmin, U0, h, xmax, Nmax);
+		}
+		else {
+			TestData = RK4_method_addaptive_step_test_task(xmin, U0, h, xmax, Nmax, Eps);
+		}
 
 
 		double xmin_limit = xmin - 0.1;
 		double xmax_limit = xmax + 0.1;
-/*
-		double ymin_limit = -1.0;
-		double ymax_limit = 100.0;
-*/
-		// Список точек
-		int i = 0;
+		
+		// Вывол данных
 		dataGridView1->Rows->Clear();
-		for (double x = xmin; x <= xmax; x += h)
+		
+		for (int i = 0; i < TestData.size(); i++)
 		{
-			//Добавление на график
-			f1_list->Add(x, f1(x));
-			f2_list->Add(x, f2(x));
+			DataTestTask currentStep = TestData[i];
+			//Добавление на график точек численной траектории, реальной траектории
+			numeric_trajectory_list->Add(currentStep.x, currentStep.V_full);
+			real_trajectory_list->Add(currentStep.x, currentStep.U);
+
 			//Печать в таблицу
+			DataGridViewCellStyle^ style = (gcnew System::Windows::Forms::DataGridViewCellStyle());
+			style->Format = L"F10";
+
 			dataGridView1->Rows->Add();
-			dataGridView1->Rows[i]->Cells[0]->Value = x; 			
-			dataGridView1->Rows[i]->Cells[1]->Value = floor(f1(x) * 1000) / 1000;
-			dataGridView1->Rows[i]->Cells[2]->Value = floor(f2(x) * 1000) / 1000;
-			i++;
+			dataGridView1->Rows[i]->Cells[0]->Value = i;
+
+			dataGridView1->Rows->Add();
+			dataGridView1->Rows[i]->Cells[1]->Value = currentStep.x; 	
+			//dataGridView1->Rows[i]->Cells[0]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[2]->Value = currentStep.V_full;
+			dataGridView1->Rows[i]->Cells[2]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[3]->Value = currentStep.V_half2;
+			dataGridView1->Rows[i]->Cells[3]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[4]->Value = currentStep.Vfull_Vhalf2;
+			dataGridView1->Rows[i]->Cells[4]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[5]->Value = currentStep.OLP;
+			dataGridView1->Rows[i]->Cells[5]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[6]->Value = currentStep.h;
+			dataGridView1->Rows[i]->Cells[6]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[7]->Value = currentStep.C1;
+			//dataGridView1->Rows[i]->Cells[0]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[8]->Value = currentStep.C2;
+			// dataGridView1->Rows[i]->Cells[0]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[9]->Value = currentStep.U;
+			dataGridView1->Rows[i]->Cells[9]->Style = style;
+
+			dataGridView1->Rows[i]->Cells[10]->Value = currentStep.U_V;
+			dataGridView1->Rows[i]->Cells[10]->Style = style;
+
+
 		}
-		LineItem Curve1 = panel->AddCurve("F1(x)", f1_list, Color::Red,SymbolType::Plus);
-		LineItem Curve2 = panel->AddCurve("F2(x)", f2_list, Color::Blue, SymbolType::None);
+		LineItem Curve1 = panel->AddCurve("V", numeric_trajectory_list, Color::Red,SymbolType::Plus);
+		LineItem Curve2 = panel->AddCurve("U", real_trajectory_list, Color::Blue, SymbolType::None);
 
 		// Устанавливаем интересующий нас интервал по оси X
 		panel->XAxis->Scale->Min = xmin_limit;
@@ -673,6 +943,22 @@ private: System::Void button2_Click(System::Object^  sender, System::EventArgs^ 
 
 }
 private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void dataGridView1_CellContentClick(System::Object^ sender, System::Windows::Forms::DataGridViewCellEventArgs^ e) {
+}
+private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void label5_Click(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void label6_Click(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void checkBox1_CheckedChanged(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void TestTask_Click(System::Object^ sender, System::EventArgs^ e) {
 }
 };
 }
