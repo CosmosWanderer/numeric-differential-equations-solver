@@ -16,13 +16,14 @@ struct DataTestTask {
 	double U;
 	double U_V;
 };
-double variant = 7;
+double variant = 19;
 double f_test_task(double x, double u) { 
 	double l = ((int)variant % 2 ? -1 : 1) * (variant / 2.0);
 	return l * u;
 }
 static double f_test_pervoobr(double x) {
-	return exp(-7.0 / 2.0 * x);
+	double l = ((int)variant % 2 ? -1 : 1) * (variant / 2.0);
+	return exp(l * x);
 }
 double RK4_step_test_task(double V, double x, double h) {
 	double k1 = f_test_task(x, V);
@@ -58,6 +59,7 @@ std::vector<DataTestTask> RK4_method_fixed_step_test_task(double x0, double U0, 
 	while ((h > 0 && x_n < b) || (h < 0 && x_n > b)){
 		DataTestTask CurrStepData;
 		iters++;
+
 
 		if (iters > Nmax) {
 			std::cout << "Too many iterations\n";
@@ -107,8 +109,7 @@ std::vector<DataTestTask> RK4_method_addaptive_step_test_task(double x0, double 
 
 	int iters = 0;
 
-	double C1 = 0;
-	double C2 = 0;
+	
 
 	DataTestTask CurrStepData;
 
@@ -118,15 +119,19 @@ std::vector<DataTestTask> RK4_method_addaptive_step_test_task(double x0, double 
 	CurrStepData.Vfull_Vhalf2 = V_n - V_n;
 	CurrStepData.OLP = 16 * (V_n - V_n) / 15.0;
 	CurrStepData.h = h_n;
-	CurrStepData.C1 = C1;
-	CurrStepData.C2 = C2;
+	CurrStepData.C1 = 0;
+	CurrStepData.C2 = 0;
 	CurrStepData.U = f_test_pervoobr(x_n);
 	CurrStepData.U_V = fabs(f_test_pervoobr(x_n) - V_n);
 
 	Data.push_back(CurrStepData);
 
+	double C1 = 0;
+
 	while ((h_n > 0 && x_n < b) || (h_n < 0 && x_n > b)) {
 		DataTestTask CurrStepData;
+
+		double C2 = 0;
 
 		iters++;
 
@@ -175,6 +180,8 @@ std::vector<DataTestTask> RK4_method_addaptive_step_test_task(double x0, double 
 		CurrStepData.C2 = C2;
 		CurrStepData.U = f_test_pervoobr(x_n);
 		CurrStepData.U_V = fabs(f_test_pervoobr(x_n) - V_n);
+
+		C1 = 0;
 
 		Data.push_back(CurrStepData);
 
@@ -314,8 +321,7 @@ std::vector<DataMainTask> RK4_method_addaptive_step_main_task(double x0, double 
 	double h_n = h;
 	int iters = 0;
 
-	double C1 = 0;
-	double C2 = 0;
+
 
 	State V_n;
 	V_n.U1 = V1_n;
@@ -335,8 +341,12 @@ std::vector<DataMainTask> RK4_method_addaptive_step_main_task(double x0, double 
 
 
 	Data.push_back(CurrStepData);
-
+	double C1 = 0;
 	while ((h_n > 0 && x_n < b) || (h_n < 0 && x_n > b)) {
+
+		
+		double C2 = 0;
+
 		DataMainTask CurrStepData;
 		iters++;
 
@@ -388,6 +398,8 @@ std::vector<DataMainTask> RK4_method_addaptive_step_main_task(double x0, double 
 		CurrStepData.C1 = C1;
 		CurrStepData.C2 = C2;
 		CurrStepData.proizv = V_full.U2;
+
+		C1 = 0;
 
 
 		Data.push_back(CurrStepData);
@@ -524,6 +536,12 @@ private: System::Windows::Forms::TabPage^ uproizvx;
 private: ZedGraph::ZedGraphControl^ zedGraphControl3;
 private: System::Windows::Forms::TabPage^ phase;
 private: ZedGraph::ZedGraphControl^ zedGraphControl4;
+private: System::Windows::Forms::RichTextBox^ richTextBox1;
+private: System::Windows::Forms::RichTextBox^ richTextBox2;
+private: System::Windows::Forms::Label^ label14;
+private: System::Windows::Forms::TextBox^ textBox14;
+
+
 
 
 
@@ -598,8 +616,17 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			this->label6 = (gcnew System::Windows::Forms::Label());
 			this->tabControl1 = (gcnew System::Windows::Forms::TabControl());
 			this->TestTask = (gcnew System::Windows::Forms::TabPage());
+			this->richTextBox1 = (gcnew System::Windows::Forms::RichTextBox());
 			this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
 			this->MainTask = (gcnew System::Windows::Forms::TabPage());
+			this->richTextBox2 = (gcnew System::Windows::Forms::RichTextBox());
+			this->tabControl2 = (gcnew System::Windows::Forms::TabControl());
+			this->ux = (gcnew System::Windows::Forms::TabPage());
+			this->zedGraphControl2 = (gcnew ZedGraph::ZedGraphControl());
+			this->uproizvx = (gcnew System::Windows::Forms::TabPage());
+			this->zedGraphControl3 = (gcnew ZedGraph::ZedGraphControl());
+			this->phase = (gcnew System::Windows::Forms::TabPage());
+			this->zedGraphControl4 = (gcnew ZedGraph::ZedGraphControl());
 			this->textBox13 = (gcnew System::Windows::Forms::TextBox());
 			this->label13 = (gcnew System::Windows::Forms::Label());
 			this->dataGridView2 = (gcnew System::Windows::Forms::DataGridView());
@@ -627,22 +654,17 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			this->label11 = (gcnew System::Windows::Forms::Label());
 			this->label12 = (gcnew System::Windows::Forms::Label());
 			this->textBox12 = (gcnew System::Windows::Forms::TextBox());
-			this->zedGraphControl2 = (gcnew ZedGraph::ZedGraphControl());
-			this->tabControl2 = (gcnew System::Windows::Forms::TabControl());
-			this->ux = (gcnew System::Windows::Forms::TabPage());
-			this->uproizvx = (gcnew System::Windows::Forms::TabPage());
-			this->phase = (gcnew System::Windows::Forms::TabPage());
-			this->zedGraphControl3 = (gcnew ZedGraph::ZedGraphControl());
-			this->zedGraphControl4 = (gcnew ZedGraph::ZedGraphControl());
+			this->label14 = (gcnew System::Windows::Forms::Label());
+			this->textBox14 = (gcnew System::Windows::Forms::TextBox());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->BeginInit();
 			this->tabControl1->SuspendLayout();
 			this->TestTask->SuspendLayout();
 			this->MainTask->SuspendLayout();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView2))->BeginInit();
 			this->tabControl2->SuspendLayout();
 			this->ux->SuspendLayout();
 			this->uproizvx->SuspendLayout();
 			this->phase->SuspendLayout();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView2))->BeginInit();
 			this->SuspendLayout();
 			// 
 			// zedGraphControl1
@@ -876,6 +898,9 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			// 
 			// TestTask
 			// 
+			this->TestTask->Controls->Add(this->label14);
+			this->TestTask->Controls->Add(this->textBox14);
+			this->TestTask->Controls->Add(this->richTextBox1);
 			this->TestTask->Controls->Add(this->checkBox1);
 			this->TestTask->Controls->Add(this->zedGraphControl1);
 			this->TestTask->Controls->Add(this->dataGridView1);
@@ -902,6 +927,14 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			this->TestTask->UseVisualStyleBackColor = true;
 			this->TestTask->Click += gcnew System::EventHandler(this, &MyForm::TestTask_Click);
 			// 
+			// richTextBox1
+			// 
+			this->richTextBox1->Location = System::Drawing::Point(713, 381);
+			this->richTextBox1->Name = L"richTextBox1";
+			this->richTextBox1->Size = System::Drawing::Size(858, 252);
+			this->richTextBox1->TabIndex = 17;
+			this->richTextBox1->Text = L"";
+			// 
 			// checkBox1
 			// 
 			this->checkBox1->AutoSize = true;
@@ -915,6 +948,7 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			// 
 			// MainTask
 			// 
+			this->MainTask->Controls->Add(this->richTextBox2);
 			this->MainTask->Controls->Add(this->tabControl2);
 			this->MainTask->Controls->Add(this->textBox13);
 			this->MainTask->Controls->Add(this->label13);
@@ -941,6 +975,101 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			this->MainTask->TabIndex = 1;
 			this->MainTask->Text = L"Main Task";
 			this->MainTask->UseVisualStyleBackColor = true;
+			this->MainTask->Click += gcnew System::EventHandler(this, &MyForm::MainTask_Click);
+			// 
+			// richTextBox2
+			// 
+			this->richTextBox2->Location = System::Drawing::Point(637, 401);
+			this->richTextBox2->Name = L"richTextBox2";
+			this->richTextBox2->Size = System::Drawing::Size(934, 252);
+			this->richTextBox2->TabIndex = 36;
+			this->richTextBox2->Text = L"";
+			// 
+			// tabControl2
+			// 
+			this->tabControl2->Controls->Add(this->ux);
+			this->tabControl2->Controls->Add(this->uproizvx);
+			this->tabControl2->Controls->Add(this->phase);
+			this->tabControl2->Location = System::Drawing::Point(0, 0);
+			this->tabControl2->Name = L"tabControl2";
+			this->tabControl2->SelectedIndex = 0;
+			this->tabControl2->Size = System::Drawing::Size(631, 396);
+			this->tabControl2->TabIndex = 35;
+			// 
+			// ux
+			// 
+			this->ux->Controls->Add(this->zedGraphControl2);
+			this->ux->Location = System::Drawing::Point(4, 22);
+			this->ux->Name = L"ux";
+			this->ux->Padding = System::Windows::Forms::Padding(3);
+			this->ux->Size = System::Drawing::Size(623, 370);
+			this->ux->TabIndex = 0;
+			this->ux->Text = L"U(x)";
+			this->ux->UseVisualStyleBackColor = true;
+			// 
+			// zedGraphControl2
+			// 
+			this->zedGraphControl2->Location = System::Drawing::Point(0, 0);
+			this->zedGraphControl2->Name = L"zedGraphControl2";
+			this->zedGraphControl2->ScrollGrace = 0;
+			this->zedGraphControl2->ScrollMaxX = 0;
+			this->zedGraphControl2->ScrollMaxY = 0;
+			this->zedGraphControl2->ScrollMaxY2 = 0;
+			this->zedGraphControl2->ScrollMinX = 0;
+			this->zedGraphControl2->ScrollMinY = 0;
+			this->zedGraphControl2->ScrollMinY2 = 0;
+			this->zedGraphControl2->Size = System::Drawing::Size(623, 370);
+			this->zedGraphControl2->TabIndex = 1;
+			this->zedGraphControl2->Load += gcnew System::EventHandler(this, &MyForm::zedGraphControl2_Load);
+			// 
+			// uproizvx
+			// 
+			this->uproizvx->Controls->Add(this->zedGraphControl3);
+			this->uproizvx->Location = System::Drawing::Point(4, 22);
+			this->uproizvx->Name = L"uproizvx";
+			this->uproizvx->Padding = System::Windows::Forms::Padding(3);
+			this->uproizvx->Size = System::Drawing::Size(623, 370);
+			this->uproizvx->TabIndex = 1;
+			this->uproizvx->Text = L"U\'(x)";
+			this->uproizvx->UseVisualStyleBackColor = true;
+			// 
+			// zedGraphControl3
+			// 
+			this->zedGraphControl3->Location = System::Drawing::Point(0, 0);
+			this->zedGraphControl3->Name = L"zedGraphControl3";
+			this->zedGraphControl3->ScrollGrace = 0;
+			this->zedGraphControl3->ScrollMaxX = 0;
+			this->zedGraphControl3->ScrollMaxY = 0;
+			this->zedGraphControl3->ScrollMaxY2 = 0;
+			this->zedGraphControl3->ScrollMinX = 0;
+			this->zedGraphControl3->ScrollMinY = 0;
+			this->zedGraphControl3->ScrollMinY2 = 0;
+			this->zedGraphControl3->Size = System::Drawing::Size(623, 370);
+			this->zedGraphControl3->TabIndex = 36;
+			// 
+			// phase
+			// 
+			this->phase->Controls->Add(this->zedGraphControl4);
+			this->phase->Location = System::Drawing::Point(4, 22);
+			this->phase->Name = L"phase";
+			this->phase->Size = System::Drawing::Size(623, 370);
+			this->phase->TabIndex = 2;
+			this->phase->Text = L"Фазовый Портрет";
+			this->phase->UseVisualStyleBackColor = true;
+			// 
+			// zedGraphControl4
+			// 
+			this->zedGraphControl4->Location = System::Drawing::Point(0, 0);
+			this->zedGraphControl4->Name = L"zedGraphControl4";
+			this->zedGraphControl4->ScrollGrace = 0;
+			this->zedGraphControl4->ScrollMaxX = 0;
+			this->zedGraphControl4->ScrollMaxY = 0;
+			this->zedGraphControl4->ScrollMaxY2 = 0;
+			this->zedGraphControl4->ScrollMinX = 0;
+			this->zedGraphControl4->ScrollMinY = 0;
+			this->zedGraphControl4->ScrollMinY2 = 0;
+			this->zedGraphControl4->Size = System::Drawing::Size(623, 370);
+			this->zedGraphControl4->TabIndex = 37;
 			// 
 			// textBox13
 			// 
@@ -1159,91 +1288,22 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			this->textBox12->TabIndex = 23;
 			this->textBox12->Text = L"0,01";
 			// 
-			// zedGraphControl2
+			// label14
 			// 
-			this->zedGraphControl2->Location = System::Drawing::Point(0, 0);
-			this->zedGraphControl2->Name = L"zedGraphControl2";
-			this->zedGraphControl2->ScrollGrace = 0;
-			this->zedGraphControl2->ScrollMaxX = 0;
-			this->zedGraphControl2->ScrollMaxY = 0;
-			this->zedGraphControl2->ScrollMaxY2 = 0;
-			this->zedGraphControl2->ScrollMinX = 0;
-			this->zedGraphControl2->ScrollMinY = 0;
-			this->zedGraphControl2->ScrollMinY2 = 0;
-			this->zedGraphControl2->Size = System::Drawing::Size(623, 370);
-			this->zedGraphControl2->TabIndex = 1;
-			this->zedGraphControl2->Load += gcnew System::EventHandler(this, &MyForm::zedGraphControl2_Load);
+			this->label14->AutoSize = true;
+			this->label14->Location = System::Drawing::Point(22, 434);
+			this->label14->Name = L"label14";
+			this->label14->Size = System::Drawing::Size(40, 13);
+			this->label14->TabIndex = 40;
+			this->label14->Text = L"Variant";
 			// 
-			// tabControl2
+			// textBox14
 			// 
-			this->tabControl2->Controls->Add(this->ux);
-			this->tabControl2->Controls->Add(this->uproizvx);
-			this->tabControl2->Controls->Add(this->phase);
-			this->tabControl2->Location = System::Drawing::Point(0, 0);
-			this->tabControl2->Name = L"tabControl2";
-			this->tabControl2->SelectedIndex = 0;
-			this->tabControl2->Size = System::Drawing::Size(631, 396);
-			this->tabControl2->TabIndex = 35;
-			// 
-			// ux
-			// 
-			this->ux->Controls->Add(this->zedGraphControl2);
-			this->ux->Location = System::Drawing::Point(4, 22);
-			this->ux->Name = L"ux";
-			this->ux->Padding = System::Windows::Forms::Padding(3);
-			this->ux->Size = System::Drawing::Size(623, 370);
-			this->ux->TabIndex = 0;
-			this->ux->Text = L"U(x)";
-			this->ux->UseVisualStyleBackColor = true;
-			// 
-			// uproizvx
-			// 
-			this->uproizvx->Controls->Add(this->zedGraphControl3);
-			this->uproizvx->Location = System::Drawing::Point(4, 22);
-			this->uproizvx->Name = L"uproizvx";
-			this->uproizvx->Padding = System::Windows::Forms::Padding(3);
-			this->uproizvx->Size = System::Drawing::Size(623, 370);
-			this->uproizvx->TabIndex = 1;
-			this->uproizvx->Text = L"U\'(x)";
-			this->uproizvx->UseVisualStyleBackColor = true;
-			// 
-			// phase
-			// 
-			this->phase->Controls->Add(this->zedGraphControl4);
-			this->phase->Location = System::Drawing::Point(4, 22);
-			this->phase->Name = L"phase";
-			this->phase->Size = System::Drawing::Size(623, 370);
-			this->phase->TabIndex = 2;
-			this->phase->Text = L"Фазовый Портрет";
-			this->phase->UseVisualStyleBackColor = true;
-			// 
-			// zedGraphControl3
-			// 
-			this->zedGraphControl3->Location = System::Drawing::Point(0, 0);
-			this->zedGraphControl3->Name = L"zedGraphControl3";
-			this->zedGraphControl3->ScrollGrace = 0;
-			this->zedGraphControl3->ScrollMaxX = 0;
-			this->zedGraphControl3->ScrollMaxY = 0;
-			this->zedGraphControl3->ScrollMaxY2 = 0;
-			this->zedGraphControl3->ScrollMinX = 0;
-			this->zedGraphControl3->ScrollMinY = 0;
-			this->zedGraphControl3->ScrollMinY2 = 0;
-			this->zedGraphControl3->Size = System::Drawing::Size(623, 370);
-			this->zedGraphControl3->TabIndex = 36;
-			// 
-			// zedGraphControl4
-			// 
-			this->zedGraphControl4->Location = System::Drawing::Point(0, 0);
-			this->zedGraphControl4->Name = L"zedGraphControl4";
-			this->zedGraphControl4->ScrollGrace = 0;
-			this->zedGraphControl4->ScrollMaxX = 0;
-			this->zedGraphControl4->ScrollMaxY = 0;
-			this->zedGraphControl4->ScrollMaxY2 = 0;
-			this->zedGraphControl4->ScrollMinX = 0;
-			this->zedGraphControl4->ScrollMinY = 0;
-			this->zedGraphControl4->ScrollMinY2 = 0;
-			this->zedGraphControl4->Size = System::Drawing::Size(623, 370);
-			this->zedGraphControl4->TabIndex = 37;
+			this->textBox14->Location = System::Drawing::Point(25, 450);
+			this->textBox14->Name = L"textBox14";
+			this->textBox14->Size = System::Drawing::Size(63, 20);
+			this->textBox14->TabIndex = 39;
+			this->textBox14->Text = L"19";
 			// 
 			// MyForm
 			// 
@@ -1260,11 +1320,11 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			this->TestTask->PerformLayout();
 			this->MainTask->ResumeLayout(false);
 			this->MainTask->PerformLayout();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView2))->EndInit();
 			this->tabControl2->ResumeLayout(false);
 			this->ux->ResumeLayout(false);
 			this->uproizvx->ResumeLayout(false);
 			this->phase->ResumeLayout(false);
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView2))->EndInit();
 			this->ResumeLayout(false);
 
 		}
@@ -1296,6 +1356,8 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 		double Eps = Convert::ToDouble(textBox4->Text);
 		double Nmax = Convert::ToDouble(textBox6->Text);
 
+		variant = Convert::ToDouble(textBox14->Text);
+
 		std::vector<DataTestTask> TestData;
 
 		bool isFixedStep = checkBox1->Checked;
@@ -1314,6 +1376,19 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 		
 		// Вывол данных
 		dataGridView1->Rows->Clear();
+
+		double max_olp = 0;
+		double total_mult = 0;
+		double total_div = 0;
+
+		double max_hi = TestData[0].h;
+		double max_hi_x = TestData[0].x;
+		double min_hi = TestData[0].h;
+		double min_hi_x = TestData[0].x;
+
+		double max_u_minus_v = TestData[0].U_V;
+		double max_u_minus_v_x = TestData[0].x;
+
 		
 		for (int i = 0; i < TestData.size(); i++)
 		{
@@ -1359,6 +1434,25 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			dataGridView1->Rows[i]->Cells[10]->Value = currentStep.U_V;
 			dataGridView1->Rows[i]->Cells[10]->Style = style;
 
+			max_olp = fmax(max_olp, currentStep.OLP);
+
+			total_mult += currentStep.C2;
+			total_div += currentStep.C1;
+
+			if (currentStep.h > max_hi) {
+				max_hi = currentStep.h;
+				max_hi_x = currentStep.x;
+			}
+
+			if (currentStep.h < min_hi) {
+				min_hi = currentStep.h;
+				min_hi_x = currentStep.x;
+			}
+
+			if (currentStep.U_V > max_u_minus_v) {
+				max_u_minus_v = currentStep.U_V;
+				max_u_minus_v_x = currentStep.x;
+			}
 
 		}
 		LineItem Curve1 = panel->AddCurve("V", numeric_trajectory_list, Color::Red,SymbolType::Plus);
@@ -1378,6 +1472,16 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 		zedGraphControl1->AxisChange();
 		// Обновляем график
 		zedGraphControl1->Invalidate();
+
+		richTextBox1->Clear();
+		richTextBox1->AppendText(String::Format(L"n = {0:F0}\r\n", TestData.size()));
+		richTextBox1->AppendText(String::Format(L"b - x_n = {0:F6}\r\n", xmax - TestData[TestData.size() - 1].x));
+		richTextBox1->AppendText(String::Format(L"max |OLP| = {0:F10}\r\n", max_olp));
+		richTextBox1->AppendText(String::Format(L"Общее число удвоений шага = {0:F0}\r\n", total_mult));
+		richTextBox1->AppendText(String::Format(L"Общее число делений шага = {0:F0}\r\n", total_div));
+		richTextBox1->AppendText(String::Format(L"max h = {0:F6} при x = {1:F6}\r\n", max_hi, max_hi_x));
+		richTextBox1->AppendText(String::Format(L"min h = {0:F6} при x = {1:F6}\r\n", min_hi, min_hi_x));
+		richTextBox1->AppendText(String::Format(L"max |u_i - v_i| = {0:F10} при x = {1:F6}", max_u_minus_v, max_u_minus_v_x));
 
 	}
 
@@ -1431,6 +1535,16 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 		// Вывол данных
 		dataGridView2->Rows->Clear();
 
+		double max_olp = 0;
+		double total_mult = 0;
+		double total_div = 0;
+
+		double max_hi = TestData[0].h;
+		double max_hi_x = TestData[0].x;
+		double min_hi = TestData[0].h;
+		double min_hi_x = TestData[0].x;
+
+
 		for (int i = 0; i < TestData.size(); i++)
 		{
 			DataMainTask currentStep = TestData[i];
@@ -1462,6 +1576,7 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 
 			dataGridView2->Rows[i]->Cells[5]->Value = currentStep.OLP;
 			dataGridView2->Rows[i]->Cells[5]->Style = style;
+			max_olp = fmax(max_olp, currentStep.OLP);
 
 			dataGridView2->Rows[i]->Cells[6]->Value = currentStep.h;
 			dataGridView2->Rows[i]->Cells[6]->Style = style;
@@ -1472,7 +1587,18 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 			dataGridView2->Rows[i]->Cells[8]->Value = currentStep.C2;
 			// dataGridView2->Rows[i]->Cells[0]->Style = style;
 
+			total_mult += currentStep.C2;
+			total_div += currentStep.C1;
 
+			if (currentStep.h > max_hi) {
+				max_hi = currentStep.h;
+				max_hi_x = currentStep.x;
+			}
+
+			if (currentStep.h < min_hi) {
+				min_hi = currentStep.h;
+				min_hi_x = currentStep.x;
+			}
 
 		}
 		LineItem Curve1 = panel_ux->AddCurve("U(x)", numeric_trajectory_list, Color::Red, SymbolType::Plus);
@@ -1485,35 +1611,6 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 		panel_ux->XAxis->Scale->Min = xmin_limit;
 		panel_ux->XAxis->Scale->Max = xmax_limit;
 		
-		// Автоматический масштаб 
-		panel_uproizvx = zedGraphControl3->GraphPane;
-		panel_uproizvx->YAxis->Scale->MinAuto = true;
-		panel_uproizvx->YAxis->Scale->MaxAuto = true;
-		panel_uproizvx->XAxis->Scale->MinAuto = true;
-		panel_uproizvx->XAxis->Scale->MaxAuto = true;
-
-		// Подписи осей
-		panel_uproizvx->XAxis->Title->Text = "x";
-		panel_uproizvx->YAxis->Title->Text = "U'(x)";
-		panel_uproizvx->Title->Text = "Velocity vs Time";
-
-		panel_phase = zedGraphControl4->GraphPane;
-
-		// Авто-масштаб для обеих осей
-		panel_phase->XAxis->Scale->MinAuto = true;
-		panel_phase->XAxis->Scale->MaxAuto = true;
-		panel_phase->YAxis->Scale->MinAuto = true;
-		panel_phase->YAxis->Scale->MaxAuto = true;
-
-		// Подписи осей
-		panel_phase->XAxis->Title->Text = "U (displacement)";
-		panel_phase->YAxis->Title->Text = "U' (velocity)";
-		panel_phase->Title->Text = "Phase Portrait";
-
-		panel_phase->XAxis->Scale->MajorStepAuto = true;  // автоматический шаг сетки
-		panel_phase->YAxis->Scale->MajorStepAuto = true;
-		panel_phase->XAxis->Scale->MinorStepAuto = true;
-		panel_phase->YAxis->Scale->MinorStepAuto = true;
 		/*
 				// Устанавливаем интересующий нас интервал по оси Y
 				panel->YAxis->Scale->Min = ymin_limit;
@@ -1526,44 +1623,92 @@ private: ZedGraph::ZedGraphControl^ zedGraphControl4;
 		// Обновляем график
 		zedGraphControl2->Invalidate();
 
+		zedGraphControl3->AxisChange();
+		zedGraphControl3->Invalidate();
+
+		zedGraphControl4->AxisChange();
+		zedGraphControl4->Invalidate();
+
+		richTextBox2->Clear();
+		richTextBox2->AppendText(String::Format(L"n = {0:F0}\r\n", TestData.size()));
+		richTextBox2->AppendText(String::Format(L"b - x_n = {0:F6}\r\n", xmax - TestData[TestData.size() - 1].x));
+		richTextBox2->AppendText(String::Format(L"max |OLP| = {0:F10}\r\n", max_olp));
+		richTextBox2->AppendText(String::Format(L"Общее число удвоений шага = {0:F0}\r\n", total_mult));
+		richTextBox2->AppendText(String::Format(L"Общее число делений шага = {0:F0}\r\n", total_div));
+		richTextBox2->AppendText(String::Format(L"max h = {0:F6} при x = {1:F6}\r\n", max_hi, max_hi_x));
+		richTextBox2->AppendText(String::Format(L"min h = {0:F6} при x = {1:F6}\r\n", min_hi, min_hi_x));
+
 	}
 
 	private: System::Void zedGraphControl1_Load(System::Object^  sender, System::EventArgs^  e) {
 	}
 
-private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e) {
-	
+private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
 	GraphPane^ panel = zedGraphControl1->GraphPane;
-	double xmin = Convert::ToDouble(textBox5->Text);
-	double xmax = Convert::ToDouble(textBox4->Text);
+
+	// Исправлено: используем textBox1 (a) и textBox2 (b) вместо textBox5 и textBox4
+	double xmin = Convert::ToDouble(textBox1->Text);  // левая граница (a)
+	double xmax = Convert::ToDouble(textBox2->Text);  // правая граница (b)
+
 	// Устанавливаем интересующий нас интервал по оси X
 	panel->XAxis->Scale->Min = xmin;
 	panel->XAxis->Scale->Max = xmax;
 
-	// Вызываем метод AxisChange (), чтобы обновить данные об осях. 
-	// В противном случае на рисунке будет показана только часть графика, 
-	// которая умещается в интервалы по осям, установленные по умолчанию
+	// Также можно автоматически подогнать ось Y под видимые данные
+	panel->YAxis->Scale->MinAuto = true;
+	panel->YAxis->Scale->MaxAuto = true;
+
+	// Вызываем метод AxisChange(), чтобы обновить данные об осях
 	zedGraphControl1->AxisChange();
 	// Обновляем график
 	zedGraphControl1->Invalidate();
-
 }
 private: System::Void button3_Click(System::Object^ sender, System::EventArgs^ e) {
+	// Get the currently active tab in tabControl2
+	if (tabControl2->SelectedTab == ux) {
+		// Zoom for U(x) graph
+		GraphPane^ panel = zedGraphControl2->GraphPane;
+		double xmin = Convert::ToDouble(textBox7->Text);  // a value
+		double xmax = Convert::ToDouble(textBox10->Text); // b value
 
-	GraphPane^ panel = zedGraphControl2->GraphPane;
-	double xmin = Convert::ToDouble(textBox11->Text);
-	double xmax = Convert::ToDouble(textBox9->Text);
-	// Устанавливаем интересующий нас интервал по оси X
-	panel->XAxis->Scale->Min = xmin;
-	panel->XAxis->Scale->Max = xmax;
+		panel->XAxis->Scale->Min = xmin;
+		panel->XAxis->Scale->Max = xmax;
 
-	// Вызываем метод AxisChange (), чтобы обновить данные об осях. 
-	// В противном случае на рисунке будет показана только часть графика, 
-	// которая умещается в интервалы по осям, установленные по умолчанию
-	zedGraphControl2->AxisChange();
-	// Обновляем график
-	zedGraphControl2->Invalidate();
+		zedGraphControl2->AxisChange();
+		zedGraphControl2->Invalidate();
+	}
+	else if (tabControl2->SelectedTab == uproizvx) {
+		// Zoom for U'(x) graph
+		GraphPane^ panel = zedGraphControl3->GraphPane;
+		double xmin = Convert::ToDouble(textBox7->Text);  // a value
+		double xmax = Convert::ToDouble(textBox10->Text); // b value
 
+		panel->XAxis->Scale->Min = xmin;
+		panel->XAxis->Scale->Max = xmax;
+
+		zedGraphControl3->AxisChange();
+		zedGraphControl3->Invalidate();
+	}
+	else if (tabControl2->SelectedTab == phase) {
+		// For phase portrait, you might want to zoom both X and Y axes
+		GraphPane^ panel = zedGraphControl4->GraphPane;
+
+		// You can set custom zoom values for phase portrait
+		// For example, using values from the data or custom input fields
+		// Here I'll use the same X range, but you might want to add separate text boxes for Y range
+		double xmin = Convert::ToDouble(textBox7->Text);
+		double xmax = Convert::ToDouble(textBox10->Text);
+
+		panel->XAxis->Scale->Min = xmin;
+		panel->XAxis->Scale->Max = xmax;
+
+		// Optional: Auto-scale Y axis based on current data
+		panel->YAxis->Scale->MinAuto = true;
+		panel->YAxis->Scale->MaxAuto = true;
+
+		zedGraphControl4->AxisChange();
+		zedGraphControl4->Invalidate();
+	}
 }
 private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e) {
 }
@@ -1586,6 +1731,10 @@ private: System::Void TestTask_Click(System::Object^ sender, System::EventArgs^ 
 private: System::Void zedGraphControl2_Load(System::Object^ sender, System::EventArgs^ e) {
 }
 private: System::Void dataGridView2_CellContentClick(System::Object^ sender, System::Windows::Forms::DataGridViewCellEventArgs^ e) {
+}
+private: System::Void textBox14_TextChanged(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void MainTask_Click(System::Object^ sender, System::EventArgs^ e) {
 }
 };
 }
